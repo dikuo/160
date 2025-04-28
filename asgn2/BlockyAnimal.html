@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Change a point color</title>
+  </head>
+
+  <body onload="main()">
+    <div>
+      <p><strong>Name:</strong>Kevin Cai</p>
+      <p><strong>Email:</strong>wcai22@ucsc.edu</p>
+      <p><strong>Notes to Grader:</strong>n/a</p>
+    </div>
+
+    <canvas id="webgl" width="400" height="400">
+    Please use a browser that supports "canvas".
+    </canvas>
+
+    <p>
+
+    <p id="numdot"> XXX </p>
+    
+    <button type="button" id="green">Green</button>
+    <button type="button" id="red">Red</button>
+
+    <button type="button" id="clearButton">Clear</button>
+
+    <p>
+    <button type="button" id="pointButton">Point</button>
+    <button type="button" id="triButton">Triangle</button>
+    <button type="button" id="circleButton">Circle</button>
+   
+    <p>
+    Red <Input type="range" min="0" max="100" value="100" class="slider" id="redSlide">
+    <p>
+    Green <Input type="range" min="0" max="100" value="0" class="slider" id="greenSlide">
+    <p>
+    Blue <Input type="range" min="0" max="100" value="0" class="slider" id="blueSlide">
+
+    <p>
+    Size <Input type="range" min="5" max="40" value="0" class="slider" id="sizeSlide">
+    <p>
+    Circle Segments <Input type="range" min="5" max="40" value="10" class="slider" id="circleSegSlide">
+    
+    <p>
+    <button type="button" id="drawPika">Draw Pikachu</button>
+
+    </p>
+
+    <script src="../lib/webgl-utils.js"></script>
+    <script src="../lib/webgl-debug.js"></script>
+    <script src="../lib/cuon-utils.js"></script>
+    <script src="../lib/cuon-matrix.js"></script>
+    <script src="Point.js"></script>
+    <script src="Triangle.js"></script>
+    <script src="Circle.js"></script>
+    <script src="Cube.js"></script>
+    <script src="BlockyAnimal.js"></script>
+  </body>
+</html>
+ 
+ 
