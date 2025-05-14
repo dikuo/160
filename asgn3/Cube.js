@@ -1,23 +1,27 @@
-// Cube.js 
+// Cube.js - Refactored for correct GL initialization timing
 
 class Cube {
     constructor() {
         this.type = 'cube';
-        this.textureNum = -2; // Default: use solid color. Set to 0, 1, 2, etc., for textures.
+        this.textureNum = -2; // Default: use solid color.
         
         this.vertexBuffer = null;
         this.uvBuffer = null;
         this.numVertices = 36; // 6 faces * 2 triangles/face * 3 vertices/triangle
 
-        // initBuffers(gl) is called externally from World.js main() after gl is available.
+        // DO NOT call this.initBuffers() here.
+        // It will be called from World.js main() after gl is initialized.
     }
 
-    initBuffers(gl) {
+    initBuffers(gl) { // gl is now passed as an argument
+        if (!gl) {
+            console.error("Cube.initBuffers: WebGL context (gl) is not provided or invalid.");
+            return false;
+        }
         if (this.vertexBuffer && this.uvBuffer) {
-            // console.log("Cube.initBuffers: Buffers already exist for this instance."); // Optional debug
+            // console.log("Cube buffers already initialized for this instance."); // Optional debug
             return true; // Buffers are already initialized
         }
-        // console.log("Cube.initBuffers attempting for instance:", this); // Optional debug
 
         // Vertices for a unit cube centered at the origin (-0.5 to 0.5 on each axis)
         // prettier-ignore
@@ -42,7 +46,7 @@ class Cube {
             -0.5, -0.5, -0.5,  -0.5,  0.5,  0.5,  -0.5,  0.5, -0.5,
         ]);
 
-        // UV coordinates for each face (standard square mapping per face)
+        // UV coordinates for each face
         // prettier-ignore
         const uvs = new Float32Array([
             0,0, 1,0, 1,1,  0,0, 1,1, 0,1, // Front
@@ -64,31 +68,29 @@ class Cube {
         this.uvBuffer = gl.createBuffer();
         if (!this.uvBuffer) { 
             console.error('Cube.initBuffers: Failed to create the UV buffer object.');
-            if (this.vertexBuffer) gl.deleteBuffer(this.vertexBuffer); // Clean up previously created buffer
+            if (this.vertexBuffer) gl.deleteBuffer(this.vertexBuffer); // Clean up
             this.vertexBuffer = null;
             return false; 
         }
         gl.bindBuffer(gl.ARRAY_BUFFER, this.uvBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, uvs, gl.STATIC_DRAW);
         
-        // console.log("Cube instance buffers initialized."); // Optional debug
+        // console.log("Cube instance buffers initialized for:", this.type); // Optional debug
         return true;
     }
 
     drawCube(gl, modelMatrix, colorIfSolid = [1.0, 1.0, 1.0, 1.0]) {
         if (!this.vertexBuffer || !this.uvBuffer) {
-            console.error("Cube.drawCube: Buffers not initialized. Call initBuffers(gl) first.");
-            // Fallback initialization attempt (not ideal if called during render loop)
+            console.error("Cube.drawCube: Buffers not initialized. Call initBuffers(gl) from main(). Instance:", this);
+            // Fallback - not ideal if this happens often
             if (!this.initBuffers(gl)) return; 
         }
 
-        gl.uniform1i(u_whichTexture, this.textureNum); // Assumes u_whichTexture is a global shader uniform location
+        gl.uniform1i(u_whichTexture, this.textureNum); // Assumes u_whichTexture is global
 
-        if (this.textureNum === -2) { // Use passed color if textureNum indicates solid color mode
+        if (this.textureNum === -2) { 
             gl.uniform4f(u_FragColor, colorIfSolid[0], colorIfSolid[1], colorIfSolid[2], colorIfSolid[3]);
         }
-        // If using textures (textureNum >= 0), shader typically uses the texture for u_FragColor.
-
         gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
 
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
