@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Virtual World</title>
+</head>
+<body onload="main()">
+    <div>
+        <p><strong>Name:</strong> Kevin Cai</p>
+        <p><strong>Email:</strong> wcai22@ucsc.edu</p>
+        <p><strong>Notes to Grader:</strong> n/a</p>
+    </div>
+
+    <div>
+        <p><strong>Our brave pup stands at the entrance of the tricky maze. Adventure calls! Guide him through the twists and turns to discover what lies within!</strong></p>
+    </div>
+    
+    <div style="display: flex; align-items: flex-start; gap: 20px;">
+        <canvas id="webgl" width="400" height="400">
+            Please use a browser that supports "canvas"
+        </canvas>
+    </div>
+
+    <p id="numdot">Stats</p>
+    <p id="gameStatus" style="font-size: 20px; color: green;"></p> <br>
+    <p id="pokeText" style="font-size: 24px; color: red; display: none;">POKE!</p>
+
+    <p>
+        <strong>Note:</strong><br>
+        Press shift + click to poke.<br>
+        Use WASD to move camera, QE to rotate, mouse drag to adjust view.
+    </p>
+
+    <br><br>
+    <p style="display: none;">
+        Camera Angle <input type="range" min="0" max="360" value="0" class="slider" id="angleSlide">
+    </p>
+
+    <p>
+        Dog Run Animation:
+        <button type="button" id="animationRunOnButton">ON</button>
+        <button type="button" id="animationRunOffButton">OFF</button>
+    </p>
+
+    <p>
+        Dog Tail Animation:
+        <button type="button" id="animationTailOnButton">ON</button>
+        <button type="button" id="animationTailOffButton">OFF</button>
+    </p>
+
+    <p>
+        Dog Front Leg Shoulder: <input type="range" id="frontLegSlide" min="-45" max="45" value="0">
+    </p>
+
+    <p>
+        Dog Front Leg Knee: <input type="range" id="pawSlide" min="0" max="45" value="0">
+    </p>
+
+    <p>
+        Dog Front Leg Paw: <input type="range" id="pawRotateSlide" min="-30" max="30" value="0">
+    </p>
+
+
+    <script src="../lib/webgl-utils.js"></script>
+    <script src="../lib/webgl-debug.js"></script>
+    <script src="../lib/cuon-utils.js"></script>
+    <script src="../lib/cuon-matrix.js"></script>
+    <script src="Camera.js"></script>
+    <script src="Vector.js"></script>
+    <script src="Triangle.js"></script>
+    <script src="Cube.js"></script>
+    <script src="Cylinder.js"></script>
+    <script src="World.js"></script>
+</body>
+</html>
