@@ -31,24 +31,9 @@
         Use WASD to move camera, QE to rotate, mouse drag to adjust view.
     </p>
 
-    <p>
-        Camera Angle <input type="range" min="-180" max="180" value="0" class="slider" id="angleSlide">
-    </p>
-
-    <p>
-        <button type="button" id="LightOnButton">Light ON</button>
-        <button type="button" id="LightOffButton">Light OFF</button>
-    </p>
-
-    <p>
-        Light X <input type="range" min="-250" max="250" value="0" class="slider" id="lightSlideX">
-        Light Y <input type="range" min="-250" max="250" value="0" class="slider" id="lightSlideY">
-        Light Z <input type="range" min="-250" max="250" value="0" class="slider" id="lightSlideZ">
-    </p>
-
-    <p>
-        <button type="button" id="NormalOnButton">Normal ON</button>
-        <button type="button" id="NormalOffButton">Normal OFF</button>
+    <br><br>
+    <p style="display: none;">
+        Camera Angle <input type="range" min="0" max="360" value="0" class="slider" id="angleSlide">
     </p>
 
     <p>
@@ -85,7 +70,6 @@
     <script src="Triangle.js"></script>
     <script src="Cube.js"></script>
     <script src="Cylinder.js"></script>
-    <script src="Sphere.js"></script>
     <script src="World.js"></script>
 </body>
 </html>

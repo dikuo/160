@@ -3,79 +3,48 @@
 class Cube {
     constructor() {
         this.type = 'cube';
-        this.textureNum = -2; // Default: use solid color. -1 for Triangles, 0+ for textures
-        this.color = [1.0, 1.0, 1.0, 1.0]; // Default color: white
-
-        // WebGL Buffers - To be initialized in initBuffers()
+        this.textureNum = -2; // Default: use solid color.
+        
         this.vertexBuffer = null;
         this.uvBuffer = null;
-        this.normalBuffer = null; // Changed from uvNormalBuffer for clarity
-        this.normalMatrix = null;
+        this.numVertices = 36; // 6 faces * 2 triangles/face * 3 vertices/triangle
 
-        // 6 faces * 2 triangles/face * 3 vertices/triangle = 36 vertices
-        this.numVertices = 36;
+        // initBuffers(gl) is called externally from World.js main() after gl is initialized.
     }
 
-    /**
-     * Initializes the WebGL buffers for the cube's vertices, UVs, and normals.
-     * This must be called *after* the WebGL context (gl) is available.
-     * @param {WebGLRenderingContext} gl - The WebGL rendering context.
-     * @returns {boolean} True if initialization was successful, false otherwise.
-     */
     initBuffers(gl) {
         if (!gl) {
             console.error("Cube.initBuffers: WebGL context (gl) is not provided or invalid.");
             return false;
         }
-        // Avoid re-initializing if buffers already exist
-        if (this.vertexBuffer && this.uvBuffer && this.normalBuffer) {
-            return true;
+        if (this.vertexBuffer && this.uvBuffer) {
+            return true; // Buffers are already initialized
         }
 
-        // --- Define Cube Geometry ---
-        // We define vertices, UVs, and Normals for each of the 6 faces.
-        // Each face requires 2 triangles (6 vertices).
-        // Using -0.5 to 0.5 makes the cube centered at the origin with a size of 1.
-
+        // Vertices for a unit cube centered at the origin (-0.5 to 0.5 on each axis)
         // prettier-ignore
         const vertices = new Float32Array([
-            // Front face (+Z)
+            // Front face
             -0.5, -0.5,  0.5,   0.5, -0.5,  0.5,   0.5,  0.5,  0.5,
             -0.5, -0.5,  0.5,   0.5,  0.5,  0.5,  -0.5,  0.5,  0.5,
-            // Back face (-Z)
+            // Back face
             -0.5, -0.5, -0.5,  -0.5,  0.5, -0.5,   0.5,  0.5, -0.5,
             -0.5, -0.5, -0.5,   0.5,  0.5, -0.5,   0.5, -0.5, -0.5,
-            // Top face (+Y)
+            // Top face
             -0.5,  0.5, -0.5,  -0.5,  0.5,  0.5,   0.5,  0.5,  0.5,
             -0.5,  0.5, -0.5,   0.5,  0.5,  0.5,   0.5,  0.5, -0.5,
-            // Bottom face (-Y)
+            // Bottom face
             -0.5, -0.5, -0.5,   0.5, -0.5, -0.5,   0.5, -0.5,  0.5,
             -0.5, -0.5, -0.5,   0.5, -0.5,  0.5,  -0.5, -0.5,  0.5,
-            // Right face (+X)
+            // Right face
              0.5, -0.5, -0.5,   0.5,  0.5, -0.5,   0.5,  0.5,  0.5,
              0.5, -0.5, -0.5,   0.5,  0.5,  0.5,   0.5, -0.5,  0.5,
-            // Left face (-X)
+            // Left face
             -0.5, -0.5, -0.5,  -0.5, -0.5,  0.5,  -0.5,  0.5,  0.5,
             -0.5, -0.5, -0.5,  -0.5,  0.5,  0.5,  -0.5,  0.5, -0.5,
         ]);
 
-        // prettier-ignore
-        const normals = new Float32Array([
-            // Front face: Normal (0, 0, 1) -> BLUE
-            0, 0, 1,   0, 0, 1,   0, 0, 1,   0, 0, 1,   0, 0, 1,   0, 0, 1,
-            // Back face: Normal (0, 0, -1) -> DARK
-            0, 0,-1,   0, 0,-1,   0, 0,-1,   0, 0,-1,   0, 0,-1,   0, 0,-1,
-            // Top face: Normal (0, 1, 0) -> GREEN
-            0, 1, 0,   0, 1, 0,   0, 1, 0,   0, 1, 0,   0, 1, 0,   0, 1, 0,
-            // Bottom face: Normal (0, -1, 0) -> DARK
-            0,-1, 0,   0,-1, 0,   0,-1, 0,   0,-1, 0,   0,-1, 0,   0,-1, 0,
-            // Right face: Normal (1, 0, 0) -> RED
-            1, 0, 0,   1, 0, 0,   1, 0, 0,   1, 0, 0,   1, 0, 0,   1, 0, 0,
-            // Left face: Normal (-1, 0, 0) -> DARK
-           -1, 0, 0,  -1, 0, 0,  -1, 0, 0,  -1, 0, 0,  -1, 0, 0,  -1, 0, 0,
-        ]);
-
-        // --- Make sure your UVs are standard too, just in case ---
+        // UV coordinates for each face (standard square mapping per face)
         // prettier-ignore
         const uvs = new Float32Array([
             0,0, 1,0, 1,1,  0,0, 1,1, 0,1, // Front
@@ -86,10 +55,6 @@ class Cube {
             0,0, 1,0, 1,1,  0,0, 1,1, 0,1, // Left
         ]);
 
-
-        // --- Create and Bind Buffers ---
-
-        // Vertex Buffer
         this.vertexBuffer = gl.createBuffer();
         if (!this.vertexBuffer) {
             console.error('Cube.initBuffers: Failed to create the vertex buffer object.');
@@ -98,98 +63,41 @@ class Cube {
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
 
-        // UV Buffer
         this.uvBuffer = gl.createBuffer();
-        if (!this.uvBuffer) {
+        if (!this.uvBuffer) { 
             console.error('Cube.initBuffers: Failed to create the UV buffer object.');
-            gl.deleteBuffer(this.vertexBuffer); this.vertexBuffer = null; // Clean up
-            return false;
+            if (this.vertexBuffer) gl.deleteBuffer(this.vertexBuffer); // Clean up
+            this.vertexBuffer = null;
+            return false; 
         }
         gl.bindBuffer(gl.ARRAY_BUFFER, this.uvBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, uvs, gl.STATIC_DRAW);
-
-        // Normal Buffer
-        this.normalBuffer = gl.createBuffer();
-        if (!this.normalBuffer) {
-            console.error('Cube.initBuffers: Failed to create the Normal buffer object.');
-            gl.deleteBuffer(this.vertexBuffer); this.vertexBuffer = null; // Clean up
-            gl.deleteBuffer(this.uvBuffer); this.uvBuffer = null; // Clean up
-            return false;
-        }
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.normalBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, normals, gl.STATIC_DRAW);
-
-        // Unbind the buffer (good practice, though not strictly necessary)
-        gl.bindBuffer(gl.ARRAY_BUFFER, null);
-
-        console.log("Cube buffers initialized successfully.");
+        
         return true;
     }
 
-    /**
-     * Draws the cube using WebGL. Assumes initBuffers has been called.
-     * @param {WebGLRenderingContext} gl - The WebGL rendering context.
-     * @param {Matrix4} modelMatrix - The model matrix for this cube instance.
-     * @param {Array<number>} [color] - Optional color override [r, g, b, a].
-     * If not provided, uses this.color.
-     */
-    drawCube(gl, modelMatrix, color) {
-        // --- Pre-draw Checks ---
-        if (!this.vertexBuffer || !this.uvBuffer || !this.normalBuffer) {
-            console.error("Cube.drawCube: Buffers not initialized. Call initBuffers(gl). Trying to initialize now...");
-            if (!this.initBuffers(gl)) {
-                console.error("Cube.drawCube: Fallback initialization failed. Cannot draw.");
-                return; // Can't draw if buffers aren't ready
-            }
+    drawCube(gl, modelMatrix, colorIfSolid = [1.0, 1.0, 1.0, 1.0]) {
+        if (!this.vertexBuffer || !this.uvBuffer) {
+            console.error("Cube.drawCube: Buffers not initialized. Call initBuffers(gl) from main(). Instance:", this);
+            // Fallback initialization attempt (not ideal if called during render loop)
+            if (!this.initBuffers(gl)) return; 
         }
 
-        // --- Set Uniforms ---
-
-        // Determine the color to use
-        const drawColor = color || this.color;
-
-        // Pass the texture number (-2 for solid color, 0+ for textures)
         gl.uniform1i(u_whichTexture, this.textureNum);
 
-        // Pass the color (will be used if u_whichTexture is < 0)
-        gl.uniform4f(u_FragColor, drawColor[0], drawColor[1], drawColor[2], drawColor[3]);
-
-        // Pass the model matrix
+        if (this.textureNum === -2) { // Use passed color if textureNum indicates solid color mode
+            gl.uniform4f(u_FragColor, colorIfSolid[0], colorIfSolid[1], colorIfSolid[2], colorIfSolid[3]);
+        }
         gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
 
-        // --- Calculate and Pass Normal Matrix ---
-        // The normal matrix transforms normals correctly, even with non-uniform scaling.
-        // It's the inverse transpose of the upper-left 3x3 part of the model matrix.
-        let normalMatrix = new Matrix4();
-        normalMatrix.setInverseOf(modelMatrix);
-        normalMatrix.transpose();
-        gl.uniformMatrix4fv(u_NormalMatrix, false, normalMatrix.elements);
-
-
-        // --- Bind Buffers and Set Attributes ---
-
-        // Bind Vertex Buffer and Point a_Position to it
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
         gl.vertexAttribPointer(a_Position, 3, gl.FLOAT, false, 0, 0);
         gl.enableVertexAttribArray(a_Position);
 
-        // Bind UV Buffer and Point a_UV to it
         gl.bindBuffer(gl.ARRAY_BUFFER, this.uvBuffer);
         gl.vertexAttribPointer(a_UV, 2, gl.FLOAT, false, 0, 0);
         gl.enableVertexAttribArray(a_UV);
 
-        // Bind Normal Buffer and Point a_Normal to it
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.normalBuffer);
-        gl.vertexAttribPointer(a_Normal, 3, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(a_Normal);
-
-        // --- Draw the Cube ---
         gl.drawArrays(gl.TRIANGLES, 0, this.numVertices);
-
-        // --- Clean up (optional but good practice) ---
-        // gl.bindBuffer(gl.ARRAY_BUFFER, null); // Unbind
-        // gl.disableVertexAttribArray(a_Position); // Disable attributes if they change often
-        // gl.disableVertexAttribArray(a_UV);
-        // gl.disableVertexAttribArray(a_Normal);
     }
 }

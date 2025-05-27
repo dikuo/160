@@ -5,34 +5,14 @@ var VSHADER_SOURCE = `
 precision mediump float;
 attribute vec4 a_Position;
 attribute vec2 a_UV;
-attribute vec3 a_Normal;
-
-// Uniforms
+varying vec2 v_UV;
 uniform mat4 u_ModelMatrix;
 uniform mat4 u_GlobalRotateMatrix;
 uniform mat4 u_ViewMatrix;
 uniform mat4 u_ProjectionMatrix;
-uniform mat4 u_NormalMatrix; // <--- ADD THIS LINE
-
-// Varyings (passed to fragment shader)
-varying vec2 v_UV;
-varying vec3 v_Normal;
-varying vec4 v_VertPos;
-
 void main() {
-    // Calculate final position
     gl_Position = u_ProjectionMatrix * u_ViewMatrix * u_GlobalRotateMatrix * u_ModelMatrix * a_Position;
-
-    // Pass UV coordinates
     v_UV = a_UV;
-
-    // Transform the normal using u_NormalMatrix and pass it
-    // We only want the direction, so we use vec4(a_Normal, 0.0)
-    // We take the .xyz to convert back to vec3
-    // We normalize it to ensure it's a unit vector (good practice for lighting)
-    v_Normal = normalize(vec3(u_NormalMatrix * vec4(a_Normal, 1))); // <--- CHANGE THIS LINE
-    // v_Normal = a_Normal;
-    v_VertPos = u_ModelMatrix * a_Position;
 }
 `;
 
@@ -40,23 +20,14 @@ void main() {
 var FSHADER_SOURCE = `
 precision mediump float;
 varying vec2 v_UV;
-varying vec3 v_Normal;
 uniform vec4 u_FragColor;
 uniform sampler2D u_Sampler0; // sky
 uniform sampler2D u_Sampler1; // brick
 uniform sampler2D u_Sampler2; // stone
 uniform sampler2D u_Sampler3; // water
 uniform int u_whichTexture;
-uniform vec3 u_lightPos;
-uniform vec3 u_cameraPos;
-uniform bool u_lightOn;
-varying vec4 v_VertPos;
-
 void main() {
-    if (u_whichTexture == -3) {
-        gl_FragColor = vec4((v_Normal + 1.0) / 2.0, 1.0);
-    }
-    else if (u_whichTexture == -2) {
+    if (u_whichTexture == -2) {
         gl_FragColor = u_FragColor;      // Use color
     } else if (u_whichTexture == -1) {
         gl_FragColor = vec4(v_UV, 1.0, 1.0);    // Use UV debug color
@@ -73,46 +44,15 @@ void main() {
     } else {
         gl_FragColor = vec4(1.0, 0.0, 1.0, 1.0); // Magenta for errors
     }
-
-    vec3 lightVector = u_lightPos - vec3(v_VertPos);
-    float r= length(lightVector);
-    
-    // if (r < 1.0) {
-    //     gl_FragColor = vec4(1, 0, 0, 1);
-    // } else if (r < 2.0) {
-    //     gl_FragColor = vec4(0, 1, 0, 1);
-    // }
-
-    vec3 L = normalize(lightVector);
-    vec3 N = normalize(v_Normal);
-    float nDotL = max(dot(N, L), 0.0);
-
-    vec3 R = reflect(-L, N);
-
-    vec3 E = normalize(u_cameraPos - vec3(v_VertPos));
-
-    float specular = pow(max(dot(E, R), 0.0), 10.0);
-
-    vec3 diffuse = vec3(gl_FragColor) * nDotL * 0.7;
-    vec3 ambient = vec3(gl_FragColor) * 0.3;
-
-    if (u_lightOn) {
-        if (u_whichTexture == 0) {
-            gl_FragColor = vec4(specular + diffuse + ambient, 1.0);
-        } 
-        else {
-            gl_FragColor = vec4(diffuse + ambient, 1.0);
-        }
-    }
 }
 `;
 
 let canvas;
 let gl;
-let a_Position, a_UV, a_Normal;
-let u_FragColor, u_ModelMatrix, u_ProjectionMatrix, u_ViewMatrix, u_GlobalRotateMatrix, u_NormalMatrix;
+let a_Position, a_UV;
+let u_FragColor, u_ModelMatrix, u_ProjectionMatrix, u_ViewMatrix, u_GlobalRotateMatrix;
 let u_Sampler0, u_Sampler1, u_Sampler2, u_Sampler3;
-let u_whichTexture, u_lightPos, u_cameraPos, u_lightOn;
+let u_whichTexture;
 
 let g_texture0 = null, g_texture1 = null, g_texture2 = null, g_texture3 = null;
 
@@ -125,9 +65,6 @@ let g_pokeAnimation = false, g_pokeStartTime = 0;
 let g_frontLegAngle = 0, g_frontRightLegAngle = 0, g_backLeftLegAngle = 0, g_backRightLegAngle = 0;
 let g_pawAngle = 0, g_frontRightPawAngle = 0, g_backLeftPawAngle = 0, g_backRightPawAngle = 0;
 let g_pawRotateAngle = 0, g_tailAngle = 0, g_headShakeAngle = 0;
-let g_normalOn = false;
-let g_lightPos = [0, 1, -2];
-let g_lightOn = true;
 
 var g_startTime = 0, g_seconds = 0;
 var g_camera = new Camera();
@@ -166,7 +103,6 @@ const g_mapBlockCube = new Cube();
 const g_floorCube = new Cube();
 const g_skyCube = new Cube();
 const g_lakeCube = new Cube();
-const g_lightCube = new Cube();
 
 const g_dogBodyCube = new Cube(), g_dogNeckCube = new Cube(), g_dogHeadCube = new Cube();
 const g_dogSnoutCube = new Cube(), g_dogNoseCube = new Cube();
@@ -192,7 +128,6 @@ function connectVariablesToGSL() {
     if (!initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE)) { console.log('Failed to intialize shaders.'); return; }
     a_Position = gl.getAttribLocation(gl.program, 'a_Position');
     a_UV = gl.getAttribLocation(gl.program, 'a_UV');
-    a_Normal = gl.getAttribLocation(gl.program, "a_Normal");
     u_FragColor = gl.getUniformLocation(gl.program, 'u_FragColor');
     u_ModelMatrix = gl.getUniformLocation(gl.program, 'u_ModelMatrix');
     u_GlobalRotateMatrix = gl.getUniformLocation(gl.program, 'u_GlobalRotateMatrix');
@@ -203,10 +138,6 @@ function connectVariablesToGSL() {
     u_Sampler2 = gl.getUniformLocation(gl.program, 'u_Sampler2');
     u_Sampler3 = gl.getUniformLocation(gl.program, 'u_Sampler3');
     u_whichTexture = gl.getUniformLocation(gl.program, 'u_whichTexture');
-    u_NormalMatrix = gl.getUniformLocation(gl.program, 'u_NormalMatrix');
-    u_lightPos = gl.getUniformLocation(gl.program, 'u_lightPos');
-    u_cameraPos = gl.getUniformLocation(gl.program, 'u_cameraPos');
-    u_lightOn = gl.getUniformLocation(gl.program, 'u_lightOn');
 
     if (!u_ModelMatrix || !u_ViewMatrix || !u_ProjectionMatrix) { // Simplified check
         console.error('Failed to get one or more GSLS uniform/attribute locations.');
@@ -214,9 +145,10 @@ function connectVariablesToGSL() {
     gl.uniformMatrix4fv(u_ModelMatrix, false, new Matrix4().elements);
 }
 
+
 function addActionsForHtmlUI() {
     document.getElementById('angleSlide').addEventListener('input', function() {
-        g_globalAngleY = parseFloat(this.value);
+        g_globalAngleX = parseFloat(this.value);
     });
     document.getElementById('frontLegSlide').addEventListener('input', function() {
         g_frontLegAngle = parseFloat(this.value);
@@ -227,37 +159,12 @@ function addActionsForHtmlUI() {
     document.getElementById('pawRotateSlide').addEventListener('input', function() {
         g_pawRotateAngle = parseFloat(this.value);
     });
-    document.getElementById('lightSlideX').addEventListener('mousemove', function(ev) {
-        if (ev.buttons == 1) {
-            g_lightPos[0] = this.value / 100;
-            renderScene();
-        }
-    })
-    document.getElementById('lightSlideY').addEventListener('mousemove', function(ev) {
-        if (ev.buttons == 1) {
-            g_lightPos[1] = this.value / 100;
-            renderScene();
-        }
-    })
-    document.getElementById('lightSlideZ').addEventListener('mousemove', function(ev) {
-        if (ev.buttons == 1) {
-            g_lightPos[2] = this.value / 100;
-            renderScene();
-        }
-    })
-
 
     document.getElementById('animationTailOnButton').onclick = function() { g_animateTail = true; };
     document.getElementById('animationTailOffButton').onclick = function() { g_animateTail = false; };
     document.getElementById('animationRunOnButton').onclick = function() { g_animateRun = true; };
     document.getElementById('animationRunOffButton').onclick = function() { g_animateRun = false; };
     
-    document.getElementById('NormalOnButton').onclick = function() { g_normalOn = true; };
-    document.getElementById('NormalOffButton').onclick = function() { g_normalOn = false; };
-
-    document.getElementById('LightOnButton').onclick = function() { g_lightOn = true; };
-    document.getElementById('LightOffButton').onclick = function() { g_lightOn = false; };
-
     let isSceneDragging = false;
     let sceneDragLastX = 0;
     canvas.addEventListener('mousedown', function(event) {
@@ -314,8 +221,6 @@ function updateAnimationAngles() {
             if (pokeTextEl) pokeTextEl.style.display = 'none';
         }
     } else { g_headShakeAngle = 0; }
-
-    g_lightPos[0] = Math.cos(g_seconds);
 }
 
 function initTextures(gl, n) {
@@ -369,8 +274,6 @@ function keydown(ev) {
     else if (ev.keyCode == 81 && typeof g_camera.rotateLeft === 'function') g_camera.rotateLeft();   // Q Key
 }
 
-const g_mySphere = new Sphere(16, 32); // Creates a sphere with 16 lat bands, 32 lon bands
-
 function main() {
     g_startTime = performance.now() / 1000.0;
     if (!setupWebGL()) return;
@@ -423,8 +326,6 @@ function main() {
     
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
     requestAnimationFrame(tick);
-
-    g_mySphere.initBuffers(gl);
 }
 
 function tick() {
@@ -486,8 +387,7 @@ function drawMap() {
             if (stackHeight == 0) continue;
             for (let i = 0; i < stackHeight; i++) {
                 g_modelMat.setIdentity();
-                if (g_normalOn)   g_mapBlockCube.textureNum = -3;
-                else if (i === 0) g_mapBlockCube.textureNum = 4;
+                if (i === 0)      g_mapBlockCube.textureNum = 4;
                 else if (i === 1) g_mapBlockCube.textureNum = 2;
                 else if (i === 2) g_mapBlockCube.textureNum = 1;
                 else              g_mapBlockCube.textureNum = 2;
@@ -505,9 +405,7 @@ function drawCustomStructures() {
     const structColor = [0.7, 0.7, 0.7, 1.0]; 
     const floorY = -0.75;
 
-    if (g_normalOn)   g_mapBlockCube.textureNum = -3;
-    else g_mapBlockCube.textureNum = 1; // Brick
-
+    g_mapBlockCube.textureNum = 1; // Brick
     let wallHeight1 = 0.9, wallWidth1 = 0.2, wallDepth1 = 2.0;
     let wallPosX1 = -4.0, wallPosY1 = floorY + wallHeight1 / 2, wallPosZ1 = -3.0;
     g_modelMat.setIdentity().translate(wallPosX1, wallPosY1, wallPosZ1).scale(wallWidth1, wallHeight1, wallDepth1);
@@ -520,8 +418,7 @@ function drawCustomStructures() {
     g_modelMat.setIdentity().translate(wallConnectX, wallPosY2, wallConnectZ).scale(wallWidth2, wallHeight2, wallDepth2);
     g_mapBlockCube.drawCube(gl, g_modelMat, structColor);
 
-    if (g_normalOn)   g_mapBlockCube.textureNum = -3;
-    else g_mapBlockCube.textureNum = 2; // Stone
+    g_mapBlockCube.textureNum = 2; // Stone
     const numMonoliths = 7; const circleRadius = 1.8;
     const monolithHeight = 1.5; const monolithWidth = 0.4; const monolithDepth = 0.3;
     const circleCenterX = 0.5; const circleCenterZ = 0.5; 
@@ -534,16 +431,13 @@ function drawCustomStructures() {
         g_mapBlockCube.drawCube(gl, g_modelMat, structColor);
     }
 
-    if (g_normalOn)   g_mapBlockCube.textureNum = -3;
-    else g_lakeCube.textureNum = 3; // Water
+    g_lakeCube.textureNum = 3; // Water
     let pondWidth = 1.5, pondDepth = 2.5, pondHeight = 0.02;
     let pondX = 3.0, pondY = floorY + pondHeight/2 - 0.015, pondZ = -2.0;
     g_modelMat.setIdentity().translate(pondX, pondY, pondZ).scale(pondWidth, pondHeight, pondDepth);
     g_lakeCube.drawCube(gl, g_modelMat, [0.0, 0.4, 0.8, 0.8]);
 
-    if (g_normalOn)   g_mapBlockCube.textureNum = -3;
-    else g_mapBlockCube.textureNum = 1; // Brick
-
+    g_mapBlockCube.textureNum = 1; // Brick
     const pillarHeight = 1.2, pillarSize = 0.3, archSpan = 1.0, lintelHeight = 0.3;
     let archXBase = -3.0, archZ = 3.0;
     g_modelMat.setIdentity().translate(archXBase, floorY + pillarHeight/2, archZ).scale(pillarSize, pillarHeight, pillarSize);
@@ -589,17 +483,17 @@ function renderScene() {
     drawMap();
     drawCustomStructures();
 
-    if (g_normalOn)  g_floorCube.textureNum = -3;
-    else g_floorCube.textureNum = 4;
-
+    g_floorCube.textureNum = 4;
     let floorScaleX = MAP_SIZE_X * 0.3 * 1.2; 
     let floorScaleZ = MAP_SIZE_Z * 0.3 * 1.2;
     g_modelMat.setIdentity().translate(0, -0.75, 0).scale(floorScaleX, 0.01, floorScaleZ);
     g_floorCube.drawCube(gl, g_modelMat, [0.58, 0.76, 0.34, 1.0]);
 
-    // if (g_normalOn)  g_lakeCube.textureNum = -3;
-    // else g_lakeCube.textureNum = 3; 
+    g_skyCube.textureNum = 0;
+    g_modelMat.setIdentity().scale(150, 150, 150);
+    g_skyCube.drawCube(gl, g_modelMat, [1.0, 0.0, 0.0, 1.0]);
 
+    g_lakeCube.textureNum = 3; 
     g_modelMat.setIdentity().translate(-MAP_SIZE_X * 0.3 * 0.15, -0.745, -MAP_SIZE_Z * 0.3 * 0.15).scale(5, 0.001, 5);
     g_lakeCube.drawCube(gl, g_modelMat, [0.0, 0.4, 0.8, 0.8]);
 
@@ -607,27 +501,6 @@ function renderScene() {
     let dogPosZ = 1; 
     g_dogWorldMatrix.setIdentity().translate(dogPosX, -0.45, dogPosZ).scale(0.5, 0.5, 0.5).rotate(180, 0, 1, 0);
     drawDog(g_dogWorldMatrix);
-
-    g_modelMat.setIdentity().translate(1, 0, 1); // Example transform
-    if (g_normalOn)  g_mySphere.textureNum = -3;
-    else g_mySphere.textureNum = -2; // Use a color
-    g_mySphere.render(gl, g_modelMat, [0.0, 0.0, 1.0, 1.0]); // Draw a blue sphere
-
-    if (g_normalOn)  g_skyCube.textureNum = -3;
-    else g_skyCube.textureNum = 0;
-
-    g_modelMat.setIdentity().scale(-100, -100, -100);
-    g_skyCube.drawCube(gl, g_modelMat, [1.0, 0.0, 0.0, 1.0]);
-
-    gl.uniform3f(u_lightPos, g_lightPos[0], g_lightPos[1], g_lightPos[2]);
-    gl.uniform3f(u_cameraPos, g_camera.eye.x, g_camera.eye.y, g_camera.eye.z);
-    gl.uniform1i(u_lightOn, g_lightOn);
-
-    var lightColor = [2, 2, 0, 1];
-    g_modelMat.setIdentity().translate(g_lightPos[0], g_lightPos[1], g_lightPos[2]);
-    g_modelMat.scale(-0.1, -0.1, -0.1);
-    g_modelMat.translate(-0.5, -0.5, -0.5);
-    g_lightCube.drawCube(gl, g_modelMat, lightColor);
 
     var duration = performance.now() - startTime;
     sendTextToHTML(" ms: " + Math.floor(duration) + " fps: " + Math.floor(10000 / duration) / 10, "numdot");
