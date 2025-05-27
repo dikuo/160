@@ -20,11 +20,6 @@ class Sphere {
         this.numIndices = 0; // Number of indices to draw
     }
 
-    /**
-     * Initializes the WebGL buffers for the sphere's vertices, UVs, normals, and indices.
-     * @param {WebGLRenderingContext} gl - The WebGL rendering context.
-     * @returns {boolean} True if initialization was successful, false otherwise.
-     */
     initBuffers(gl) {
         if (!gl) {
             console.error("Sphere.initBuffers: WebGL context (gl) is not provided or invalid.");
@@ -92,8 +87,6 @@ class Sphere {
 
         this.numIndices = indexData.length;
 
-        // --- Create and Bind Buffers ---
-
         // Vertex Buffer
         this.vertexBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
@@ -122,12 +115,6 @@ class Sphere {
         return true;
     }
 
-    /**
-     * Draws the sphere using WebGL. Assumes initBuffers has been called.
-     * @param {WebGLRenderingContext} gl - The WebGL rendering context.
-     * @param {Matrix4} modelMatrix - The model matrix for this sphere instance.
-     * @param {Array<number>} [color] - Optional color override [r, g, b, a].
-     */
     render(gl, modelMatrix, color) { // Renamed to render for consistency
         // --- Pre-draw Checks ---
         if (!this.vertexBuffer || !this.uvBuffer || !this.normalBuffer || !this.indexBuffer) {
@@ -148,8 +135,6 @@ class Sphere {
         normalMatrix.setInverseOf(modelMatrix);
         normalMatrix.transpose();
         gl.uniformMatrix4fv(u_NormalMatrix, false, normalMatrix.elements);
-
-        // --- Bind Buffers and Set Attributes ---
 
         // Vertex Buffer
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
@@ -172,8 +157,5 @@ class Sphere {
         // --- Draw the Sphere ---
         gl.drawElements(gl.TRIANGLES, this.numIndices, gl.UNSIGNED_SHORT, 0);
 
-        // --- Clean up ---
-        // gl.bindBuffer(gl.ARRAY_BUFFER, null);
-        // gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
     }
 }

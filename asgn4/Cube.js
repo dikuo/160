@@ -9,19 +9,13 @@ class Cube {
         // WebGL Buffers - To be initialized in initBuffers()
         this.vertexBuffer = null;
         this.uvBuffer = null;
-        this.normalBuffer = null; // Changed from uvNormalBuffer for clarity
+        this.normalBuffer = null; 
         this.normalMatrix = null;
 
         // 6 faces * 2 triangles/face * 3 vertices/triangle = 36 vertices
         this.numVertices = 36;
     }
 
-    /**
-     * Initializes the WebGL buffers for the cube's vertices, UVs, and normals.
-     * This must be called *after* the WebGL context (gl) is available.
-     * @param {WebGLRenderingContext} gl - The WebGL rendering context.
-     * @returns {boolean} True if initialization was successful, false otherwise.
-     */
     initBuffers(gl) {
         if (!gl) {
             console.error("Cube.initBuffers: WebGL context (gl) is not provided or invalid.");
@@ -32,12 +26,6 @@ class Cube {
             return true;
         }
 
-        // --- Define Cube Geometry ---
-        // We define vertices, UVs, and Normals for each of the 6 faces.
-        // Each face requires 2 triangles (6 vertices).
-        // Using -0.5 to 0.5 makes the cube centered at the origin with a size of 1.
-
-        // prettier-ignore
         const vertices = new Float32Array([
             // Front face (+Z)
             -0.5, -0.5,  0.5,   0.5, -0.5,  0.5,   0.5,  0.5,  0.5,
@@ -59,7 +47,6 @@ class Cube {
             -0.5, -0.5, -0.5,  -0.5,  0.5,  0.5,  -0.5,  0.5, -0.5,
         ]);
 
-        // prettier-ignore
         const normals = new Float32Array([
             // Front face: Normal (0, 0, 1) -> BLUE
             0, 0, 1,   0, 0, 1,   0, 0, 1,   0, 0, 1,   0, 0, 1,   0, 0, 1,
@@ -75,8 +62,6 @@ class Cube {
            -1, 0, 0,  -1, 0, 0,  -1, 0, 0,  -1, 0, 0,  -1, 0, 0,  -1, 0, 0,
         ]);
 
-        // --- Make sure your UVs are standard too, just in case ---
-        // prettier-ignore
         const uvs = new Float32Array([
             0,0, 1,0, 1,1,  0,0, 1,1, 0,1, // Front
             0,0, 1,0, 1,1,  0,0, 1,1, 0,1, // Back
@@ -85,9 +70,6 @@ class Cube {
             0,0, 1,0, 1,1,  0,0, 1,1, 0,1, // Right
             0,0, 1,0, 1,1,  0,0, 1,1, 0,1, // Left
         ]);
-
-
-        // --- Create and Bind Buffers ---
 
         // Vertex Buffer
         this.vertexBuffer = gl.createBuffer();
@@ -102,7 +84,7 @@ class Cube {
         this.uvBuffer = gl.createBuffer();
         if (!this.uvBuffer) {
             console.error('Cube.initBuffers: Failed to create the UV buffer object.');
-            gl.deleteBuffer(this.vertexBuffer); this.vertexBuffer = null; // Clean up
+            gl.deleteBuffer(this.vertexBuffer); this.vertexBuffer = null; 
             return false;
         }
         gl.bindBuffer(gl.ARRAY_BUFFER, this.uvBuffer);
@@ -112,8 +94,8 @@ class Cube {
         this.normalBuffer = gl.createBuffer();
         if (!this.normalBuffer) {
             console.error('Cube.initBuffers: Failed to create the Normal buffer object.');
-            gl.deleteBuffer(this.vertexBuffer); this.vertexBuffer = null; // Clean up
-            gl.deleteBuffer(this.uvBuffer); this.uvBuffer = null; // Clean up
+            gl.deleteBuffer(this.vertexBuffer); this.vertexBuffer = null; 
+            gl.deleteBuffer(this.uvBuffer); this.uvBuffer = null; 
             return false;
         }
         gl.bindBuffer(gl.ARRAY_BUFFER, this.normalBuffer);
@@ -126,15 +108,7 @@ class Cube {
         return true;
     }
 
-    /**
-     * Draws the cube using WebGL. Assumes initBuffers has been called.
-     * @param {WebGLRenderingContext} gl - The WebGL rendering context.
-     * @param {Matrix4} modelMatrix - The model matrix for this cube instance.
-     * @param {Array<number>} [color] - Optional color override [r, g, b, a].
-     * If not provided, uses this.color.
-     */
     drawCube(gl, modelMatrix, color) {
-        // --- Pre-draw Checks ---
         if (!this.vertexBuffer || !this.uvBuffer || !this.normalBuffer) {
             console.error("Cube.drawCube: Buffers not initialized. Call initBuffers(gl). Trying to initialize now...");
             if (!this.initBuffers(gl)) {
@@ -143,7 +117,6 @@ class Cube {
             }
         }
 
-        // --- Set Uniforms ---
 
         // Determine the color to use
         const drawColor = color || this.color;
@@ -165,9 +138,6 @@ class Cube {
         normalMatrix.transpose();
         gl.uniformMatrix4fv(u_NormalMatrix, false, normalMatrix.elements);
 
-
-        // --- Bind Buffers and Set Attributes ---
-
         // Bind Vertex Buffer and Point a_Position to it
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
         gl.vertexAttribPointer(a_Position, 3, gl.FLOAT, false, 0, 0);
@@ -186,10 +156,5 @@ class Cube {
         // --- Draw the Cube ---
         gl.drawArrays(gl.TRIANGLES, 0, this.numVertices);
 
-        // --- Clean up (optional but good practice) ---
-        // gl.bindBuffer(gl.ARRAY_BUFFER, null); // Unbind
-        // gl.disableVertexAttribArray(a_Position); // Disable attributes if they change often
-        // gl.disableVertexAttribArray(a_UV);
-        // gl.disableVertexAttribArray(a_Normal);
     }
 }

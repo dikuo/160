@@ -127,7 +127,7 @@ let a_Position, a_UV, a_Normal;
 let u_FragColor, u_ModelMatrix, u_ProjectionMatrix, u_ViewMatrix, u_GlobalRotateMatrix, u_NormalMatrix;
 let u_Sampler0, u_Sampler1, u_Sampler2, u_Sampler3;
 let u_whichTexture, u_lightPos, u_cameraPos, u_lightOn, u_lightColor;
-let u_spotlightDir, u_spotlightCutoff, u_spotlightFeather, u_spotlightOn; // <--- ADD THIS
+let u_spotlightDir, u_spotlightCutoff, u_spotlightFeather, u_spotlightOn; 
 
 let g_texture0 = null, g_texture1 = null, g_texture2 = null, g_texture3 = null;
 
@@ -144,14 +144,14 @@ let g_normalOn = false;
 let g_lightPos = [0, 1, -2];
 let g_lightOn = true;
 let g_lightColor = [1.0, 1.0, 1.0];
-let g_spotlightOn = false; // <--- ADD THIS
-let g_spotlightCutoff = Math.cos(Math.PI / 6); // 30 degrees <--- ADD THIS
-let g_spotlightFeather = Math.cos(Math.PI / 8); // 22.5 degrees <--- ADD THIS
+let g_spotlightOn = false; //
+let g_spotlightCutoff = Math.cos(Math.PI / 6); // 30 degrees 
+let g_spotlightFeather = Math.cos(Math.PI / 8); // 22.5 degrees 
 
 var g_startTime = 0, g_seconds = 0;
 var g_camera = new Camera();
 
-// --- MAP and SHAPES (same as before) ---
+// --- MAP and SHAPES 
 const NEW_MAP_SIZE = 32;
 var g_map = [];
 for (let r = 0; r < NEW_MAP_SIZE; r++) {
@@ -227,12 +227,10 @@ function connectVariablesToGSL() {
     u_lightOn = gl.getUniformLocation(gl.program, 'u_lightOn');
     u_lightColor = gl.getUniformLocation(gl.program, 'u_lightColor');
 
-    // --- ADD THESE LINES ---
     u_spotlightDir = gl.getUniformLocation(gl.program, 'u_spotlightDir');
     u_spotlightCutoff = gl.getUniformLocation(gl.program, 'u_spotlightCutoff');
     u_spotlightFeather = gl.getUniformLocation(gl.program, 'u_spotlightFeather');
     u_spotlightOn = gl.getUniformLocation(gl.program, 'u_spotlightOn');
-    // --- END OF ADDED LINES ---
 
     if (!u_ModelMatrix || !u_ViewMatrix || !u_ProjectionMatrix || !u_lightColor || !u_spotlightDir) {
         console.error('Failed to get one or more GSLS uniform/attribute locations.');
@@ -241,7 +239,6 @@ function connectVariablesToGSL() {
 }
 
 function addActionsForHtmlUI() {
-    // --- Existing UI Actions (same as before) ---
     document.getElementById('angleSlide').addEventListener('input', function() { g_globalAngleY = parseFloat(this.value); });
     document.getElementById('frontLegSlide').addEventListener('input', function() { g_frontLegAngle = parseFloat(this.value); });
     document.getElementById('pawSlide').addEventListener('input', function() { g_pawAngle = parseFloat(this.value); });
@@ -260,27 +257,18 @@ function addActionsForHtmlUI() {
     document.getElementById('NormalOffButton').onclick = function() { g_normalOn = false; };
     document.getElementById('LightOnButton').onclick = function() { g_lightOn = true; g_spotlightOn = false; }; // Turn off spot when point is on
     document.getElementById('LightOffButton').onclick = function() { g_lightOn = false; };
-    // --- End of Existing UI Actions ---
 
-    // --- ADD THESE LINES (Requires HTML buttons) ---
     document.getElementById('spotlightOnButton').onclick = function() { g_spotlightOn = true; g_lightOn = false; }; // Turn off point when spot is on
     document.getElementById('spotlightOffButton').onclick = function() { g_spotlightOn = false; };
-    // --- END OF ADDED LINES ---
 
-
-    // --- Mouse Drag (same as before) ---
     let isSceneDragging = false;
     let sceneDragLastX = 0;
     canvas.addEventListener('mousedown', function(event) { if (event.button === 0 && !event.shiftKey && !g_isMouseDownForFPSCamera) { isSceneDragging = true; sceneDragLastX = event.clientX; } });
     canvas.addEventListener('mousemove', function(event) { if (isSceneDragging) { const deltaX = event.clientX - sceneDragLastX; g_globalAngleY -= deltaX * 0.25; sceneDragLastX = event.clientX; } });
     document.addEventListener('mouseup', function(event) { if (event.button === 0 && isSceneDragging) { isSceneDragging = false; } });
     document.addEventListener('mouseleave', function() { if (isSceneDragging) { isSceneDragging = false; } });
-    // --- End of Mouse Drag ---
 }
 
-// --- updateAnimationAngles, initTextures, keydown, main (mostly same as before) ---
-// ... (Make sure `main` calls `g_mySphere.initBuffers(gl);` and `g_lightCube.initBuffers(gl);`)
-// ... (Make sure Vector.js provides `sub` and `normalize` methods or implement them)
 function updateAnimationAngles() {
     if (g_animateRun) {
         g_frontLegAngle = 30 * Math.sin(g_seconds * 2);
@@ -315,7 +303,6 @@ function updateAnimationAngles() {
         }
     } else { g_headShakeAngle = 0; }
 
-    // Only update light position based on time if spotlight is OFF
     if (!g_spotlightOn) {
         g_lightPos[0] = Math.cos(g_seconds);
     }
@@ -392,11 +379,11 @@ function main() {
     if (g_camera) {
         let mapWorldCenterX = (MAP_SIZE_X / 2.0 - 0.5) * 0.3;
         let mapWorldCenterZ = (MAP_SIZE_Z / 2.0 - 0.5) * 0.3;
-        // CHANGE THESE LINES BACK:
+
         g_camera.eye = new Vector(mapWorldCenterX, 1.5, mapWorldCenterZ + NEW_MAP_SIZE * 0.3 * 0.4 + 2);
         g_camera.at  = new Vector(mapWorldCenterX, 0, mapWorldCenterZ);
         g_camera.up  = new Vector(0, 1, 0);
-        // END OF CHANGES
+
         if (g_camera.hasOwnProperty('fov')) { g_camera.fov = 60; }
     } else {
         console.error("CRITICAL: g_camera object not created!");
@@ -412,7 +399,6 @@ function main() {
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
     requestAnimationFrame(tick);
 }
-// --- END OF 'mostly same' section ---
 
 function tick() {
     g_seconds = performance.now() / 1000.0 - g_startTime;
@@ -426,14 +412,11 @@ function sendTextToHTML(text, htmlID) {
     if (htmlEl) { htmlEl.innerHTML = text; }
 }
 
-// --- Mouse and Poke Handlers (same as before) ---
 function mousedown_FPSCamera(ev) { if (ev.button === 0 && !ev.shiftKey) { g_isMouseDownForFPSCamera = true; g_lastMouseX = ev.clientX; g_lastMouseY = ev.clientY; } }
 function mouseup_FPSCamera(ev) { if (ev.button === 0) { g_isMouseDownForFPSCamera = false; } }
 function mousemove_FPSCamera(ev) { if (g_isMouseDownForFPSCamera) { let deltaX = ev.clientX - g_lastMouseX; let deltaY = ev.clientY - g_lastMouseY; if (g_camera) { if (deltaX > 0.5) g_camera.rotateRight(); else if (deltaX < -0.5) g_camera.rotateLeft(); if (deltaY > 0.5) g_camera.tiltDown(); else if (deltaY < -0.5) g_camera.tiltUp(); } g_lastMouseX = ev.clientX; g_lastMouseY = ev.clientY; } }
 function handlePokeClick(event) { if (event.shiftKey && event.button === 0) { g_pokeAnimation = true; g_pokeStartTime = g_seconds; let pokeTextEl = document.getElementById('pokeText'); if (pokeTextEl) pokeTextEl.style.display = 'block'; } }
-// --- END OF Handlers ---
 
-// --- drawMap and drawCustomStructures (same as before) ---
 function drawMap() {
     const BLOCK_SCALE = 0.3;
     for (let r = 0; r < MAP_SIZE_Z; r++) {
@@ -496,7 +479,6 @@ function drawCustomStructures() {
     g_modelMat.setIdentity().translate(archXBase + (archSpan + pillarSize)/2 , floorY + pillarHeight + lintelHeight/2, archZ).scale(archSpan + pillarSize*2, lintelHeight, pillarSize);
     g_mapBlockCube.drawCube(gl, g_modelMat, structColor);
 }
-// --- END OF drawMap/drawCustomStructures ---
 
 
 function renderScene() {
@@ -508,9 +490,9 @@ function renderScene() {
     // Use .x, .y, .z
     if (g_camera && g_camera.eye && g_camera.at && g_camera.up) {
         g_viewMat.setLookAt(
-            g_camera.eye.x, g_camera.eye.y, g_camera.eye.z, // <--- Corrected
-            g_camera.at.x,  g_camera.at.y,  g_camera.at.z,  // <--- Corrected
-            g_camera.up.x,  g_camera.up.y,  g_camera.up.z   // <--- Corrected
+            g_camera.eye.x, g_camera.eye.y, g_camera.eye.z, 
+            g_camera.at.x,  g_camera.at.y,  g_camera.at.z,  
+            g_camera.up.x,  g_camera.up.y,  g_camera.up.z   
         );
     } else {
          console.error("RenderScene: Camera not fully initialized!");
@@ -530,11 +512,11 @@ function renderScene() {
     let currentSpotlightDir = [0, -1, 0];
 
     if (g_spotlightOn && g_camera && g_camera.eye && g_camera.at) {
-        currentLightPos = [g_camera.eye.x, g_camera.eye.y, g_camera.eye.z]; // <--- Corrected
+        currentLightPos = [g_camera.eye.x, g_camera.eye.y, g_camera.eye.z]; 
         let dir = [
-            g_camera.at.x - g_camera.eye.x, // <--- Corrected
-            g_camera.at.y - g_camera.eye.y, // <--- Corrected
-            g_camera.at.z - g_camera.eye.z  // <--- Corrected
+            g_camera.at.x - g_camera.eye.x, 
+            g_camera.at.y - g_camera.eye.y, 
+            g_camera.at.z - g_camera.eye.z  
         ];
         let mag = Math.sqrt(dir[0]*dir[0] + dir[1]*dir[1] + dir[2]*dir[2]);
         if (mag > 0) {
@@ -543,8 +525,7 @@ function renderScene() {
     }
 
     gl.uniform3f(u_lightPos, currentLightPos[0], currentLightPos[1], currentLightPos[2]);
-    // THIS IS THE LINE YOU HIGHLIGHTED - MAKE SURE IT'S CHANGED:
-    gl.uniform3f(u_cameraPos, g_camera.eye.x, g_camera.eye.y, g_camera.eye.z); // <--- Corrected
+    gl.uniform3f(u_cameraPos, g_camera.eye.x, g_camera.eye.y, g_camera.eye.z); 
     gl.uniform1i(u_lightOn, g_lightOn);
     gl.uniform3f(u_lightColor, g_lightColor[0], g_lightColor[1], g_lightColor[2]);
     gl.uniform1i(u_spotlightOn, g_spotlightOn);
@@ -552,7 +533,6 @@ function renderScene() {
     gl.uniform1f(u_spotlightCutoff, g_spotlightCutoff);
     gl.uniform1f(u_spotlightFeather, g_spotlightFeather);
 
-    // --- Rest of the drawing calls ---
     drawMap();
     drawCustomStructures();
 
@@ -593,8 +573,6 @@ function renderScene() {
     sendTextToHTML(" ms: " + Math.floor(duration) + " fps: " + Math.floor(10000 / duration) / 10, "numdot");
 }
 
-// --- drawDog (same as before, but ensure it sets normal matrix) ---
-// We need to modify the drawDog helpers to set the normal matrix.
 function drawDog(dogWorldMatrix) {
     const bodyColor=[0.6,0.3,0.1,1], neckColor=[0.55,0.28,0.08,1], headColor=[0.6,0.3,0.1,1],
           snoutColor=[0.5,0.25,0.05,1], noseColor=[0.1,0.1,0.1,1], eyeColor=[0,0,0,1],
@@ -622,74 +600,95 @@ function drawDog(dogWorldMatrix) {
         shape.render(gl);
     }
 
-    // --- Rest of drawDog is the same ---
     g_dogParentJointMatrix.set(dogWorldMatrix);
     g_dogParentJointMatrix.translate(-0.25, -0.1, 0.0);
     g_dogChildPartMatrix.set(g_dogParentJointMatrix);
     g_dogChildPartMatrix.scale(0.5, 0.3, 0.6);
     drawDogPart(g_dogBodyCube, g_dogChildPartMatrix, bodyColor);
+
     let currentParentMatrix = new Matrix4(g_dogParentJointMatrix);
     currentParentMatrix.translate(0, 0.15, -0.25).rotate(-30, 1, 0, 0);
     g_dogChildPartMatrix.set(currentParentMatrix);
     g_dogChildPartMatrix.scale(0.1, 0.3, 0.1);
     drawDogPart(g_dogNeckCube, g_dogChildPartMatrix, neckColor);
+
     let headParentMatrix = new Matrix4(currentParentMatrix);
     headParentMatrix.translate(0, 0.3, 0).rotate(10 + g_headShakeAngle, 1, 0, 0);
     g_dogChildPartMatrix.set(headParentMatrix);
     g_dogChildPartMatrix.scale(0.25, 0.2, 0.25);
     drawDogPart(g_dogHeadCube, g_dogChildPartMatrix, headColor);
+
     let snoutParentMatrix = new Matrix4(headParentMatrix);
     snoutParentMatrix.translate(0, -0.05, -0.15);
     g_dogChildPartMatrix.set(snoutParentMatrix);
     g_dogChildPartMatrix.scale(0.15, 0.1, 0.2);
     drawDogPart(g_dogSnoutCube, g_dogChildPartMatrix, snoutColor);
+    
     g_dogChildPartMatrix.set(snoutParentMatrix);
     g_dogChildPartMatrix.translate(0, 0, -0.1);
     g_dogChildPartMatrix.scale(0.03, 0.03, 0.03);
     drawDogPart(g_dogNoseCube, g_dogChildPartMatrix, noseColor);
+
     g_dogChildPartMatrix.set(headParentMatrix).translate(-0.08, 0.05, -0.13).scale(0.04,0.04,0.04);
     drawDogPart(g_dogLeftEyeCube, g_dogChildPartMatrix, eyeColor);
+
     g_dogChildPartMatrix.set(headParentMatrix).translate(0.08, 0.05, -0.13).scale(0.04,0.04,0.04);
     drawDogPart(g_dogRightEyeCube, g_dogChildPartMatrix, eyeColor);
+
     g_dogChildPartMatrix.set(headParentMatrix).translate(-0.1,0.1,0.05).rotate(20,0,0,1).rotate(-15,1,0,0).scale(0.06,0.18,0.06);
     drawDogPart(g_dogLeftEarCube, g_dogChildPartMatrix, earColor);
+
     g_dogChildPartMatrix.set(headParentMatrix).translate(0.1,0.1,0.05).rotate(-20,0,0,1).rotate(-15,1,0,0).scale(0.06,0.18,0.06);
     drawDogPart(g_dogRightEarCube, g_dogChildPartMatrix, earColor);
+
     g_dogChildPartMatrix.set(g_dogParentJointMatrix);
     g_dogChildPartMatrix.translate(0,0.1,0.3).rotate(g_tailAngle,1,0,0).rotate(-30,1,0,0).scale(0.05,0.3,0.05);
     drawDogCylinder(g_dogTailCylinder, g_dogChildPartMatrix, tailColor);
+
     let legAttachmentBase = new Matrix4(g_dogParentJointMatrix);
     let currentLegMatrix = new Matrix4();
+
     currentLegMatrix.set(legAttachmentBase).translate(-0.25, -0.05, -0.2).rotate(g_frontLegAngle, 1, 0, 0);
     g_dogChildPartMatrix.set(currentLegMatrix).scale(0.1, 0.3, 0.1);
     drawDogPart(g_dogLegPartCube, g_dogChildPartMatrix, legColor);
+
     currentLegMatrix.translate(0, -0.3, 0).rotate(g_pawAngle, 1, 0, 0);
     g_dogChildPartMatrix.set(currentLegMatrix).scale(0.08, 0.3, 0.08);
     drawDogPart(g_dogLegPartCube, g_dogChildPartMatrix, legColor);
+
     g_dogChildPartMatrix.set(currentLegMatrix).translate(0, -0.3, 0.02).rotate(g_pawRotateAngle, 1, 0, 0).scale(0.1, 0.05, 0.12);
     drawDogPart(g_dogPawCube, g_dogChildPartMatrix, pawColor);
+
     currentLegMatrix.set(legAttachmentBase).translate(0.25, -0.05, -0.2).rotate(g_frontRightLegAngle, 1, 0, 0);
     g_dogChildPartMatrix.set(currentLegMatrix).scale(0.1, 0.3, 0.1);
     drawDogPart(g_dogLegPartCube, g_dogChildPartMatrix, legColor);
+
     currentLegMatrix.translate(0, -0.3, 0).rotate(g_frontRightPawAngle, 1, 0, 0);
     g_dogChildPartMatrix.set(currentLegMatrix).scale(0.08, 0.3, 0.08);
     drawDogPart(g_dogLegPartCube, g_dogChildPartMatrix, legColor);
+
     g_dogChildPartMatrix.set(currentLegMatrix).translate(0, -0.3, 0.02).rotate(g_pawRotateAngle, 1, 0, 0).scale(0.1, 0.05, 0.12);
     drawDogPart(g_dogPawCube, g_dogChildPartMatrix, pawColor);
+
     currentLegMatrix.set(legAttachmentBase).translate(-0.25, -0.05, 0.2).rotate(g_backLeftLegAngle, 1, 0, 0);
     g_dogChildPartMatrix.set(currentLegMatrix).scale(0.1, 0.3, 0.1);
     drawDogPart(g_dogLegPartCube, g_dogChildPartMatrix, legColor);
+
     currentLegMatrix.translate(0, -0.3, 0).rotate(g_backLeftPawAngle, 1, 0, 0);
     g_dogChildPartMatrix.set(currentLegMatrix).scale(0.08, 0.3, 0.08);
     drawDogPart(g_dogLegPartCube, g_dogChildPartMatrix, legColor);
+
     g_dogChildPartMatrix.set(currentLegMatrix).translate(0, -0.3, 0.02).rotate(g_pawRotateAngle, 1, 0, 0).scale(0.1, 0.05, 0.12);
     drawDogPart(g_dogPawCube, g_dogChildPartMatrix, pawColor);
+
     currentLegMatrix.set(legAttachmentBase).translate(0.25, -0.05, 0.2).rotate(g_backRightLegAngle, 1, 0, 0);
     g_dogChildPartMatrix.set(currentLegMatrix).scale(0.1, 0.3, 0.1);
     drawDogPart(g_dogLegPartCube, g_dogChildPartMatrix, legColor);
+
     currentLegMatrix.translate(0, -0.3, 0).rotate(g_backRightPawAngle, 1, 0, 0);
     g_dogChildPartMatrix.set(currentLegMatrix).scale(0.08, 0.3, 0.08);
     drawDogPart(g_dogLegPartCube, g_dogChildPartMatrix, legColor);
+    
     g_dogChildPartMatrix.set(currentLegMatrix).translate(0, -0.3, 0.02).rotate(g_pawRotateAngle, 1, 0, 0).scale(0.1, 0.05, 0.12);
     drawDogPart(g_dogPawCube, g_dogChildPartMatrix, pawColor);
 }
